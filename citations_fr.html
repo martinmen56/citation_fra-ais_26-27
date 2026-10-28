@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Citations de français</title>
+<style>
+:root{
+  --bg:#0b1f66; --bg2:#13338f; --paper:#fbf9f4; --ink:#1b2133; --muted:#6b7288;
+  --accent:#2c75ff; --ok:#12805c; --warn:#b45309; --line:rgba(255,255,255,.18);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{min-height:100%;background:var(--bg)}
+body{min-height:100vh;min-height:100dvh;font-family:var(--sans);color:#fff;
+  background:radial-gradient(1200px 600px at 50% -10%,var(--bg2),var(--bg));
+  padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.app{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(1.5rem,4vw,2rem);letter-spacing:.2px}
+.home{color:#fff;opacity:.8;text-decoration:none;font-size:.9rem}
+.home:hover{opacity:1;text-decoration:underline}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:8px}
+.toolbar>*{flex:0 0 auto}
+button,select{font:inherit;font-size:.9rem;border-radius:10px;border:1px solid var(--line);
+  background:rgba(255,255,255,.1);color:#fff;padding:9px 14px;cursor:pointer;transition:background .15s}
+button:hover,select:hover{background:rgba(255,255,255,.18)}
+select option{color:#111}
+:focus-visible{outline:3px solid #ffd166;outline-offset:2px}
+button:disabled{opacity:.4;cursor:not-allowed}
+
+.stats{display:flex;flex-wrap:wrap;gap:14px;font-size:.88rem;opacity:.92}
+.bar{height:6px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:#7fe3b8;transition:width .3s}
+
+/* Carte : hauteur automatique, jamais de texte coupé */
+.card{background:var(--paper);color:var(--ink);border-radius:18px;
+  box-shadow:0 18px 40px rgba(0,0,0,.3);cursor:pointer;user-select:none;
+  min-height:min(420px,60vh);padding:clamp(22px,5vw,40px);display:flex;flex-direction:column;gap:18px;
+  border-left:6px solid var(--accent)}
+.card.known{border-left-color:var(--ok)}
+.card.review{border-left-color:#f59e0b}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.badge{padding:4px 10px;border-radius:999px;background:#eceff7;color:#33405f;font-weight:600}
+.badge.known{background:#dcf4ea;color:var(--ok)}
+.badge.review{background:#fdeccf;color:var(--warn)}
+.body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;overflow-wrap:anywhere;hyphens:auto}
+.question{font-family:var(--serif);font-size:clamp(1.4rem,4.6vw,2rem);line-height:1.35;text-align:center}
+.cite{font-family:var(--serif);font-size:clamp(1.1rem,3.4vw,1.35rem);line-height:1.6;font-style:italic;
+  padding-left:16px;border-left:3px solid #c9d4f5}
+.note{font-size:clamp(.95rem,2.8vw,1.05rem);line-height:1.6;color:#39425a}
+.src{font-size:.9rem;font-weight:600;color:var(--accent)}
+.hint{text-align:center;font-size:.8rem;color:#9aa1b5}
+.empty{text-align:center;color:var(--muted);font-family:var(--serif);font-size:1.2rem}
+
+.rate{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rate button{padding:13px;font-weight:700;border:none}
+.rate .no{background:#f59e0b;color:#2b1600}
+.rate .yes{background:#34d399;color:#04261a}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.nav button{width:48px;height:48px;padding:0;font-size:1.2rem;border-radius:50%}
+.count{font-weight:600;font-variant-numeric:tabular-nums}
+.keys{text-align:center;font-size:.78rem;opacity:.6}
+@media (max-width:520px){.keys{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1 id="title"></h1>
+    <a class="home" href="index.html">← Accueil</a>
+  </header>
+
+  <div class="toolbar">
+    <select id="themeSel" aria-label="Thème"></select>
+    <select id="filterSel" aria-label="Filtre">
+      <option value="all">Toutes</option>
+      <option value="review">À revoir</option>
+      <option value="known">Maîtrisées</option>
+    </select>
+    <button id="shuffleBtn">Mélanger</button>
+    <button id="orderBtn">Ordre normal</button>
+    <button id="resetBtn">Réinitialiser</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div class="bar"><i id="fill"></i></div>
+
+  <div class="card" id="card" tabindex="0" role="button" aria-label="Retourner la carte"></div>
+
+  <div class="rate">
+    <button class="no" id="noBtn">À revoir</button>
+    <button class="yes" id="yesBtn">Je sais</button>
+  </div>
+
+  <div class="nav">
+    <button id="prevBtn" aria-label="Carte précédente">←</button>
+    <div class="count" id="count"></div>
+    <button id="nextBtn" aria-label="Carte suivante">→</button>
+  </div>
+  <div class="keys">← → naviguer · Espace retourner · 1 à revoir · 2 je sais</div>
+</div>
+
+<script>
+/* ==========================================================
+   ✏️  ZONE À MODIFIER : ajoute tes citations ici
+   Copie un bloc { ... }, colle-le avant le "]" et remplis-le.
+   - theme : le thème (les filtres se créent tout seuls)
+   - q     : ce qui apparaît au recto (ex. "II.C.1 – Nature adversaire")
+   - cite  : la citation (accepte du HTML : <em>, <b>, <br>)
+   - src   : auteur, œuvre, page (facultatif)
+   - note  : ton commentaire / l'idée à retenir (facultatif)
+   Pense aux virgules entre les blocs.
+   ========================================================== */
+const TITRE = "Citations de français";
+const STORAGE_KEY = "citations-francais-v1";
+
+const CITATIONS = [
+  {
+    theme: "Mystère et altérité",
+    q: "I.C.1 – Mystère et altérité",
+    cite: "« si solide qu’ait été notre habitude de voir les églantines fleurir sur l’églantier, les têtards se changer en grenouilles […], il suffit d’une déception de cette confiance […] pour qu’une crainte radicale s’empare de nous »",
+    src: "Canguilhem, p. 219",
+    note: "La rupture de la norme habituelle provoque une peur fondamentale face au mystère du vivant."
+  },
+  {
+    theme: "La nature adversaire",
+    q: "II.H.1 – Nature comme adversaire",
+    cite: "« par moments, j’avais l’impression que la nature ne constituait pour ses créatures qu’un immense piège. »",
+    src: "Haushofer, p. 280",
+    note: "Vision de la nature comme piège implacable."
+  },
+  {
+    theme: "La nature généreuse",
+    q: "IV.V.1 – Nature généreuse",
+    cite: "« la mer fournit à tous mes besoins. »",
+    src: "Verne, p. 71",
+    note: "Nemo : autosuffisance totale grâce à la générosité marine."
+  }
+  // ← colle ta prochaine citation ici (sans oublier la virgule au-dessus)
+];
+/* ==========================  FIN DE LA ZONE  ========================== */
+
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var els = {
+    card:$("card"), themeSel:$("themeSel"), filterSel:$("filterSel"), stats:$("stats"),
+    fill:$("fill"), count:$("count"), title:$("title")
+  };
+  els.title.textContent = TITRE;
+  document.title = TITRE;
+
+  // Identifiant stable : change si tu modifies le recto, pas si tu déplaces la carte
+  function hash(s){ var h=5381; for(var i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))|0; } return "c"+(h>>>0).toString(36); }
+  var cards = CITATIONS.map(function(c,i){
+    var o = Object.assign({}, c);
+    o.id = c.id || hash((c.q||"")+"|"+(c.cite||c.a||""));
+    o.theme = c.theme || "Autres";
+    return o;
+  });
+
+  // Sauvegarde (protégée : ne plante jamais si le stockage est bloqué)
+  var state = {progress:{}, order:null, filter:"all", theme:"all"};
+  try { var raw = JSON.parse(localStorage.getItem(STORAGE_KEY)); if(raw) Object.assign(state, raw); } catch(e){}
+  function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+
+  var list = [], idx = 0, flipped = false;
+
+  // Thèmes
+  var themes = Array.from(new Set(cards.map(function(c){return c.theme;})));
+  els.themeSel.innerHTML = '<option value="all">Tous les thèmes</option>' +
+    themes.map(function(t){ return '<option></option>'; }).join("");
+  Array.from(els.themeSel.options).slice(1).forEach(function(o,i){ o.value = themes[i]; o.textContent = themes[i]; });
+  if(themes.indexOf(state.theme)<0) state.theme="all";
+  els.themeSel.value = state.theme;
+  els.filterSel.value = state.filter;
+
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+  function build(keepId){
+    var byId = {}; cards.forEach(function(c){ byId[c.id]=c; });
+    var ordered = cards;
+    if(Array.isArray(state.order)){
+      var seen = {};
+      ordered = state.order.map(function(id){ seen[id]=1; return byId[id]; }).filter(Boolean)
+        .concat(cards.filter(function(c){ return !seen[c.id]; })); // nouvelles cartes à la fin
+    }
+    list = ordered.filter(function(c){
+      if(state.theme!=="all" && c.theme!==state.theme) return false;
+      var p = state.progress[c.id];
+      if(state.filter==="known") return p==="known";
+      if(state.filter==="review") return p!=="known";
+      return true;
+    });
+    var i = keepId ? list.findIndex(function(c){return c.id===keepId;}) : 0;
+    idx = i>=0 ? i : 0;
+    flipped = false;
+    render();
+  }
+
+  function stats(){
+    var scope = cards.filter(function(c){ return state.theme==="all" || c.theme===state.theme; });
+    var k = scope.filter(function(c){ return state.progress[c.id]==="known"; }).length;
+    var pct = scope.length ? Math.round(k/scope.length*100) : 0;
+    els.stats.innerHTML = '<span>Maîtrisées : <b>'+k+'/'+scope.length+'</b></span>' +
+      '<span>À revoir : <b>'+(scope.length-k)+'</b></span><span><b>'+pct+' %</b></span>';
+    els.fill.style.width = pct+"%";
+  }
+
+  function render(){
+    stats();
+    var none = !list.length;
+    ["noBtn","yesBtn","prevBtn","nextBtn"].forEach(function(id){ $(id).disabled = none; });
+    if(none){
+      els.card.className = "card";
+      els.card.innerHTML = '<div class="body"><p class="empty">Aucune carte ici.<br>Change de filtre ou ajoute des citations dans la liste.</p></div>';
+      els.count.textContent = "0 / 0";
+      return;
+    }
+    var c = list[idx], p = state.progress[c.id];
+    var label = p==="known" ? "Maîtrisée" : p==="review" ? "À revoir" : "Non notée";
+    var head = '<div class="meta"><span>'+esc(c.theme)+'</span><span class="badge '+(p||"")+'">'+label+'</span></div>';
+    var html;
+    if(!flipped){
+      html = head + '<div class="body"><p class="question">'+(c.q||"")+'</p></div><div class="hint">Touche la carte pour voir la citation</div>';
+    } else {
+      html = head + '<div class="body">' +
+        (c.cite ? '<blockquote class="cite">'+c.cite+'</blockquote>' : '') +
+        (c.src ? '<div class="src">'+c.src+'</div>' : '') +
+        (c.note ? '<p class="note">'+c.note+'</p>' : '') +
+        (!c.cite && c.a ? '<p class="note">'+c.a+'</p>' : '') + '</div>';
+    }
+    els.card.className = "card " + (p||"");
+    els.card.innerHTML = html;
+    els.count.textContent = (idx+1)+" / "+list.length;
+  }
+
+  // Retournement : petite animation, contenu échangé à mi-course (aucun bug de face cachée)
+  function flip(){
+    if(!list.length) return;
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if(reduce || !els.card.animate){ flipped = !flipped; render(); return; }
+    var a = els.card.animate([{transform:"rotateX(0)"},{transform:"rotateX(90deg)"}],{duration:120,easing:"ease-in"});
+    a.onfinish = function(){
+      flipped = !flipped; render();
+      els.card.animate([{transform:"rotateX(-90deg)"},{transform:"rotateX(0)"}],{duration:120,easing:"ease-out"});
+    };
+  }
+  function go(d){ if(!list.length) return; idx=(idx+d+list.length)%list.length; flipped=false; render(); }
+  function rate(v){
+    if(!list.length) return;
+    state.progress[list[idx].id] = v; save();
+    var keep = state.filter==="all";
+    if(keep){ go(1); } else { var id = list[idx].id; build(null); }
+  }
+
+  els.card.addEventListener("click", flip);
+  $("prevBtn").onclick = function(){ go(-1); };
+  $("nextBtn").onclick = function(){ go(1); };
+  $("yesBtn").onclick = function(){ rate("known"); };
+  $("noBtn").onclick = function(){ rate("review"); };
+  $("shuffleBtn").onclick = function(){
+    var ids = cards.map(function(c){return c.id;});
+    for(var i=ids.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=ids[i]; ids[i]=ids[j]; ids[j]=t; }
+    state.order = ids; save(); build(null);
+  };
+  $("orderBtn").onclick = function(){ state.order = null; save(); build(null); };
+  $("resetBtn").onclick = function(){
+    if(!confirm("Effacer toute ta progression ?")) return;
+    state.progress = {}; save(); build(null);
+  };
+  els.themeSel.onchange = function(){ state.theme = els.themeSel.value; save(); build(null); };
+  els.filterSel.onchange = function(){ state.filter = els.filterSel.value; save(); build(null); };
+
+  document.addEventListener("keydown", function(e){
+    var tag = (e.target.tagName||"").toLowerCase();
+    if(tag==="select") return;
+    if(e.key==="ArrowRight") go(1);
+    else if(e.key==="ArrowLeft") go(-1);
+    else if((e.key===" "||e.key==="Enter") && tag!=="button"){ e.preventDefault(); flip(); }
+    else if(e.key==="1") rate("review");
+    else if(e.key==="2") rate("known");
+  });
+
+  // Balayage tactile
+  var x0 = null;
+  els.card.addEventListener("touchstart", function(e){ x0 = e.changedTouches[0].clientX; }, {passive:true});
+  els.card.addEventListener("touchend", function(e){
+    if(x0===null) return;
+    var dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if(Math.abs(dx)>60){ e.preventDefault(); go(dx<0 ? 1 : -1); }
+  });
+
+  build(null);
+})();
+</script>
+</body>
+</html>
